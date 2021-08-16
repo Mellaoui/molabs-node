@@ -1,0 +1,52 @@
+service: auth-service
+
+frameworkVersion: "2"
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: v1
+  region: ap-east-1
+  apiName: ${self:service}
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - "sns:Publish"
+          Resource:
+            - "*"
+functions:
+  expire-entities:
+    handler: src/functions/expire-entities.handler
+    timeout: 20
+    reservedConcurrency: 1
+    events:
+      - schedule: rate(30 minutes)
+  on-event:
+    handler: src/functions/on-event.handler
+    timeout: 20
+    reservedConcurrency: 2
+    events:
+      - sns: arn:aws:sns:ap-east-1:749096123717:open
+      - sns: arn:aws:sns:ap-east-1:749096123717:close
+      - sns: arn:aws:sns:ap-east-1:749096123717:contact-update
+  api:
+    handler: src/functions/api.handler
+    timeout: 25
+    reservedConcurrency: 20
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+plugins: 
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-dotenv-plugin
+  
+package: 
+  include:
+    - openapi.yaml
+    - templates.yaml

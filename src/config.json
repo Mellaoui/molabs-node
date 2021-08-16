@@ -1,0 +1,13 @@
+{
+	"adminTeamId": "071dd86e-1e35-45bc-82cf-38287f703a97",
+	"otpTemplates": {
+		"60": "72672cb044ecee0ad12c0d58d04a0b40",
+		"86": "72672cb044ecee0ad12c0d58d04a0b40",
+		"852": "72672cb044ecee0ad12c0d58d04a0b40",
+		"default": "72672cb044ecee0ad12c0d58d04a0b40"
+	},
+	"whatsappNotifications": {
+		"teamId": "a62ee4d0-6b06-4ea3-89c3-9bec3020e854",
+		"userId": "2ad0174f-4e24-45b6-b679-d4395bcb2661"
+	}
+}

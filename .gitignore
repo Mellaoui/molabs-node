@@ -1,0 +1,8 @@
+.env.production
+.env.development
+.env.test
+node_modules
+.build
+.serverless
+.DS_Store
+src/keys.json

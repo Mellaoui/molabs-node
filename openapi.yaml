@@ -1,0 +1,1161 @@
+openapi: 3.0.1
+info:
+  title: ChatDaddy Auth & Teams Service
+  description: Manage Users & Teams
+  contact:
+    email: info@chatdaddy.tech
+  version: 1.0.0
+servers:
+  - url: https://api-teams.chatdaddy.tech
+    description: Main url
+paths:
+  /token:
+    post:
+      operationId: tokenPost
+      summary: Login to ChatDaddy
+      tags:
+        - OAuth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - access_token
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  refresh_token_expiry:
+                    $ref: '#/components/schemas/Timestamp'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+    get:
+      operationId: tokenGet
+      summary: Fetch list of tokens
+      description: Returns in descending order of most recently used
+      tags:
+        - OAuth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RefreshToken'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy:
+            - TOKENS_READ
+    delete:
+      operationId: tokenDelete
+      summary: Revoke refresh tokens
+      description: If the token is not specified, all tokens of the user are revoked
+      tags:
+        - OAuth
+      parameters:
+        - name: token
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Revoked
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy:
+            - TOKENS_DELETE
+  /invite-links:
+    post:
+      operationId: inviteLinksPost
+      summary: Create an invite link for the team
+      description: >
+        To generate an invite link for a specific set of scopes, you must also
+        have the same set of scopes. 
+
+        Eg. you cannot generate a link which gives access to `MESSAGE_SEND` when
+        you don't have access to `MESSAGE_SEND` yourself. 
+
+        This is done for obvious security concerns.
+      tags:
+        - Invite Links
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - scopes
+              properties:
+                scopes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Scope'
+                  minItems: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteLink'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy:
+            - TEAMLINK_CREATE
+  /invite-links/{id}:
+    get:
+      operationId: inviteLinksGet
+      summary: Get info about an invite link
+      tags:
+        - Invite Links
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: the invite link ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteLink'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy: []
+  /teams:
+    get:
+      operationId: teamsGet
+      summary: Fetch teams you have access to
+      tags:
+        - Teams
+      parameters:
+        - name: q
+          in: query
+          description: Search by name, ID, invite code, etc.
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Fetch specific teams by ID
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - name: userId
+          in: query
+          description: teams that contain this user ID
+          schema:
+            type: string
+            format: uuid
+        - name: count
+          in: query
+          description: The numbers of items to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          description: The page number
+          schema:
+            type: integer
+            minimum: 1
+        - name: includeTeamMembers
+          in: query
+          description: >-
+            Should include the team members. Will only return members for which
+            you have the `TEAMMEMBERS_READ` scope
+          schema:
+            type: boolean
+        - name: includeInviteLinks
+          in: query
+          description: >-
+            Should include the invite links.  Will only return invite links for
+            which you have the `TEAMLINKS_READ` scope
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - teams
+                additionalProperties: false
+                properties:
+                  teams:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Team'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy: []
+    patch:
+      operationId: teamsPatch
+      summary: Update the team the access token is for
+      description: >
+        - If you want to update/delete members -- ensure you have the
+        `TEAMMEMBERS_UPDATE` scope
+
+        - If you want to delete invite links -- ensure you have the
+        `TEAMLINKS_UPDATE` scope
+
+        - Also you cannot delete/update yourself in the team. If you attempt to
+        do so, a 400 will be returned
+      tags:
+        - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamPatchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy:
+            - TEAM_UPDATE
+  /teams/join:
+    post:
+      operationId: teamsJoinInvite
+      summary: Join a team
+      tags:
+        - Teams
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: inviteLink id
+          schema:
+            type: string
+      responses:
+        '204':
+          description: OK
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy: []
+  /users:
+    get:
+      operationId: usersGet
+      summary: Fetch users you have access to
+      tags:
+        - Users
+      parameters:
+        - name: q
+          in: query
+          description: Search by name, ID, email, phone etc.
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Fetch specific users by ID
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - name: count
+          in: query
+          description: The numbers of items to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          description: The page number
+          schema:
+            type: integer
+            minimum: 1
+        - name: includeMemberships
+          in: query
+          description: Should include the user's memberships
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy: []
+    post:
+      operationId: usersPost
+      summary: Create a new user
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '204':
+          description: OK
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - otp: []
+        - chatdaddy:
+            - ADMIN_PANEL_ACCESS
+    patch:
+      operationId: usersPatch
+      summary: Update the user in the access token
+      parameters:
+        - name: userId
+          description: Change the password of this user ID
+          in: query
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - chatdaddy:
+            - USERS_PATCH
+    delete:
+      operationId: usersDelete
+      summary: Delete a user
+      description: Deletes the user specified
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - Users
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy:
+            - ADMIN_PANEL_ACCESS
+  /users/password:
+    patch:
+      operationId: usersPasswordPatch
+      summary: Reset user password
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+      responses:
+        '204':
+          description: OK
+      security:
+        - otp: []
+  /otp:
+    post:
+      operationId: otpPost
+      summary: Generate an OTP
+      tags:
+        - OTP
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OTP'
+  /notify:
+    post:
+      operationId: notify
+      summary: Notify a team member
+      tags:
+        - Notifications
+      parameters:
+        - name: userId
+          required: true
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  minimum: 1
+                  maximum: 128
+                content:
+                  type: string
+                  minimum: 1
+                  maximum: 8196
+                parameters:
+                  type: object
+                  additionalProperties: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - whatsapp
+                  - email
+                properties:
+                  whatsapp:
+                    $ref: '#/components/schemas/NotificationResult'
+                  email:
+                    $ref: '#/components/schemas/NotificationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+      security:
+        - chatdaddy:
+            - TEAM_NOTIFY
+components:
+  schemas:
+    Scope:
+      type: string
+      enum:
+        - WA_STATE
+        - CONTACTS_READ_ASSIGNED
+        - CONTACTS_READ_ALL
+        - CONTACTS_CREATE
+        - CONTACTS_DELETE
+        - CONTACTS_UPDATE
+        - CAMPAIGNS_READ
+        - CAMPAIGNS_CREATE
+        - CAMPAIGNS_DELETE
+        - CAMPAIGNS_UPDATE
+        - KEYWORD_READ
+        - KEYWORD_CREATE
+        - KEYWORD_DELETE
+        - KEYWORD_UPDATE
+        - TEMPLATES_READ
+        - TEMPLATES_CREATE
+        - TEMPLATES_DELETE
+        - TEMPLATES_UPDATE
+        - TAGS_READ
+        - TAGS_CREATE
+        - TAGS_DELETE
+        - TOKENS_READ
+        - TOKENS_DELETE
+        - USERS_PATCH
+        - REFERRAL_APPLY_CREDIT
+        - TEAM_UPDATE
+        - ACCOUNT_CREATE
+        - ACCOUNT_READ
+        - ACCOUNT_DELETE
+        - ACCOUNT_PATCH
+        - TEAMLINK_CREATE
+        - TEAMLINK_READ
+        - TEAMMEMBERS_UPDATE
+        - TEAMMEMBERS_READ
+        - TEAM_NOTIFY
+        - CHATS_ACCESS_ALL
+        - CHATS_ACCESS_ASSIGNED
+        - CHATS_DELETE
+        - MESSAGES_SEND_TO_ASSIGNED
+        - MESSAGES_SEND_TO_ALL
+        - MESSAGES_SCHEDULE
+        - MESSAGES_DELETE
+        - GROUPS_CREATE
+        - GROUPS_UPDATE
+        - NOTES
+        - NOTIFICATION_READ
+        - NOTIFICATION_CREATE
+        - NOTIFICATION_UPDATE
+        - NOTIFICATION_DELETE
+        - INTEGRATIONS_UPDATE
+        - ADMIN_PANEL_ACCESS
+        - PAYMENTS_READ
+        - PAYMENTS_UPDATE
+        - WA_LIVE_EVENTS
+        - CHATDADDY_HOOK
+    JWT:
+      type: object
+      additionalProperties: false
+      required:
+        - scope
+        - exp
+        - iat
+        - user
+      properties:
+        scope:
+          type: string
+          description: Binary representation of the scope array
+          example: 1010101011
+        exp:
+          type: number
+        iat:
+          type: number
+        user:
+          type: object
+          additionalProperties: false
+          required:
+            - id
+            - teamId
+            - phoneNumber
+          properties:
+            id:
+              type: string
+            teamId:
+              type: string
+            fullName:
+              type: string
+            phoneNumber:
+              type: number
+    PasswordAuthRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - phoneNumber
+        - password
+      properties:
+        phoneNumber:
+          type: number
+        returnRefreshToken:
+          type: boolean
+          default: true
+        password:
+          type: string
+          description: This will be the base64 encoded SHA256 of the plaintext password
+        teamId:
+          type: string
+          description: >-
+            The team ID to generate the token for, lastUsedTeam will be used
+            otherwise
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Scope'
+        updateLastUsedTeam:
+          type: boolean
+          description: >-
+            Should logging in with this team ID update the lastUsedTeam for
+            login
+          default: false
+    RefreshTokenLoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - refreshToken
+        - teamId
+      properties:
+        refreshToken:
+          type: string
+        teamId:
+          type: string
+          description: >-
+            The team ID to generate the token for, lastUsedTeam will be used
+            otherwise
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Scope'
+        updateLastUsedTeam:
+          type: boolean
+          description: >-
+            Should fetching the token of a new team update the lastUsedTeam for
+            login
+          default: false
+    AuthRequest:
+      oneOf:
+        - $ref: '#/components/schemas/PasswordAuthRequest'
+        - $ref: '#/components/schemas/RefreshTokenLoginRequest'
+      discriminator:
+        propertyName: phoneNumber
+      example:
+        phoneNumber: 9122321223
+        password: abcd
+        scopes:
+          - WA_LIVE_EVENTS
+    OAuthRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: The phone number
+          example: 85223123332
+        password:
+          type: string
+          description: Plaintext password
+        grant_type:
+          type: string
+          enum:
+            - password
+        scope:
+          type: string
+          description: Space separated scopes
+          example: MESSAGES_SEND_ALL NOTES
+    RefreshToken:
+      type: object
+      additionalProperties: false
+      description: >
+        A refresh token allows you to generate access tokens to access & update
+        things on ChatDaddy services.
+
+        A refresh token will expire and become invalidated after 14 days of no
+        activity.
+      required:
+        - token
+        - userId
+        - createdAt
+        - expiresAt
+      properties:
+        token:
+          type: string
+        userId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+    NotifyModel:
+      type: object
+      additionalProperties: false
+      properties:
+        whatsapp:
+          type: boolean
+        email:
+          type: boolean
+    ResetPassword:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+    UserPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        fullName:
+          maxLength: 100
+          minLength: 1
+          type: string
+          example: Somebody
+        emailAddress:
+          type: string
+          format: email
+        notify:
+          $ref: '#/components/schemas/NotifyModel'
+        phoneNumber:
+          type: number
+          description: Phone number. Only admin access can modify
+        password:
+          type: string
+          description: new password. Only admin access can modify
+    UserCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - fullName
+        - phoneNumber
+        - password
+      properties:
+        fullName:
+          maxLength: 100
+          minLength: 1
+          type: string
+          example: Jeff
+        phoneNumber:
+          type: number
+          description: Will only contain numbers, no + sign, brackets etc.
+          example: 911234567789
+        password:
+          type: string
+          minLength: 24
+          maxLength: 64
+          description: SHA256 of the plaintext password pls
+        emailAddress:
+          nullable: true
+          type: string
+          format: email
+        notify:
+          $ref: '#/components/schemas/NotifyModel'
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - fullName
+        - phoneNumber
+        - notify
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        disabledAt:
+          $ref: '#/components/schemas/Timestamp'
+        fullName:
+          maxLength: 100
+          minLength: 1
+          type: string
+          example: Jeff
+        lastUsedTeamId:
+          type: string
+          format: uuid
+          description: >-
+            The last used team ID, your refresh token when logging in is
+            generated for this team
+        phoneNumber:
+          type: number
+          description: Will only contain numbers, no + sign, brackets etc.
+          example: 911234567789
+        emailAddress:
+          nullable: true
+          type: string
+          format: email
+        createdByMethod:
+          type: string
+          enum:
+            - admin-panel
+            - otp
+        notify:
+          $ref: '#/components/schemas/NotifyModel'
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMember'
+    TeamMember:
+      type: object
+      additionalProperties: false
+      required:
+        - scopes
+        - addedAt
+      properties:
+        team:
+          $ref: '#/components/schemas/Team'
+        user:
+          $ref: '#/components/schemas/User'
+        addedAt:
+          $ref: '#/components/schemas/Timestamp'
+        addedBy:
+          nullable: true
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Scope'
+    TeamMetadata:
+      type: object
+      additionalProperties: false
+      properties:
+        companyName:
+          type: string
+        companyEmailAddress:
+          type: string
+        companyWebsite:
+          type: string
+    InviteLink:
+      type: object
+      required:
+        - id
+        - teamId
+        - createdBy
+        - createdAt
+        - expiresAt
+        - scopes
+      properties:
+        id:
+          type: string
+        teamId:
+          type: string
+          description: The team it can join
+        createdBy:
+          type: string
+          format: uuid
+          description: User ID of the person who created the link
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        scopes:
+          type: array
+          description: The scopes allowed for the invite link
+          items:
+            $ref: '#/components/schemas/Scope'
+    Team:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - name
+        - scopes
+        - metadata
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        createdBy:
+          type: string
+          format: uuid
+          description: Who created the team
+        name:
+          type: string
+        isAdmin:
+          type: boolean
+          description: Is an admin team
+        scopes:
+          type: array
+          description: The max scopes allowed
+          items:
+            $ref: '#/components/schemas/Scope'
+        metadata:
+          $ref: '#/components/schemas/TeamMetadata'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMember'
+        inviteLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InviteLink'
+    TeamPatchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/TeamMetadata'
+        members:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+            additionalProperties: false
+            properties:
+              id:
+                type: string
+                format: uuid
+              scopes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Scope'
+              delete:
+                description: If set, will delete the team member
+                type: boolean
+                enum:
+                  - true
+        inviteLinks:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+            additionalProperties: false
+            properties:
+              id:
+                type: string
+              delete:
+                description: If set, will delete the invite link
+                type: boolean
+                enum:
+                  - true
+    OTP:
+      type: object
+      additionalProperties: false
+      required:
+        - phoneNumber
+        - expiresAt
+        - resendsLeft
+      properties:
+        phoneNumber:
+          type: number
+        otp:
+          type: number
+          minimum: 100000
+          maximum: 999999
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        resendsLeft:
+          type: number
+          minimum: 0
+    Timestamp:
+      type: string
+      format: date-time
+    NotificationResult:
+      oneOf:
+        - type: string
+          description: The error message when sending
+        - type: boolean
+          description: |
+            If "false", this channel was not used. 
+            If "true" -- then the channel was successfully sent to
+  responses:
+    ErrorResponse:
+      description: There was an error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: number
+                minimum: 200
+                maximum: 505
+              error:
+                type: string
+                description: Specific description of the error
+              message:
+                type: string
+                description: What the error was
+              data:
+                type: object
+                description: Some extra information about the error
+  securitySchemes:
+    otp:
+      type: apiKey
+      in: header
+      name: X-OTP
+      description: >
+        The phone number contactenated with the OTP,
+
+        Eg. if the OTP is 123456 and the phone number is 9112345, then
+        otp=9112345:123456
+    chatdaddy:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: https://api-teams.chatdaddy.tech/oauth2/token
+          scopes:
+            WA_STATE: Open, close, logout from your WA account
+            CONTACTS_READ_ASSIGNED: Read profile contacts
+            CONTACTS_READ_ALL: Read Audience contacts
+            CONTACTS_CREATE: Allow the creation of contacts
+            CONTACTS_DELETE: Allow the deletion of contacts
+            CONTACTS_UPDATE: Allow the updating of contacts
+            CAMPAIGNS_READ: Allow the reading of Broadcast Campaigns
+            CAMPAIGNS_CREATE: Allow the creation of Broadcast Campaigns
+            CAMPAIGNS_DELETE: Allow the deletion of Broadcast Campaigns
+            CAMPAIGNS_UPDATE: Allow the updating of Broadcast Campaigns
+            KEYWORD_READ: Allow the reading of Automated Keyword Replies
+            KEYWORD_CREATE: Allow the creation of Automated Keyword Replies
+            KEYWORD_DELETE: Allow the deletion of Automated Keyword Replies
+            KEYWORD_UPDATE: Allow the updating of Automated Keyword Replies
+            TEMPLATES_READ: Allow the reading of Message Templates
+            TEMPLATES_CREATE: Allow the creation of Message Templates
+            TEMPLATES_DELETE: Allow the deletion of Message Templates
+            TEMPLATES_UPDATE: Allow the updating of Message Templates
+            TAGS_READ: Can read tags
+            TAGS_CREATE: Allow the creation of Tags
+            TAGS_DELETE: Allow the deletion of Tags
+            TOKENS_READ: Read all tokens belonging to your account
+            TOKENS_DELETE: Delete a token belonging to your account
+            USERS_PATCH: Update your personal info
+            REFERRAL_APPLY_CREDIT: Apply credit to coupon code from pending credit
+            TEAM_UPDATE: Modify the details of the team
+            ACCOUNT_CREATE: Add an additional IM account
+            ACCOUNT_READ: Read all available accounts
+            ACCOUNT_DELETE: Delete an IM account
+            ACCOUNT_PATCH: Update an existing IM account (open, close, logout etc)
+            TEAMLINK_CREATE: Create a new invite link for the team
+            TEAMLINK_READ: Read invite links of the team
+            TEAMMEMBERS_UPDATE: Update/delete team members
+            TEAMMEMBERS_READ: Read the members of your team
+            TEAM_NOTIFY: Allow the notifying of Teams
+            CHATS_ACCESS_ALL: Allow the access of All Chats
+            CHATS_ACCESS_ASSIGNED: Allow the access of assigned Chats
+            CHATS_DELETE: Allow the deletion of Chats
+            MESSAGES_SEND_TO_ASSIGNED: Allow the sending of Messages to Assigned
+            MESSAGES_SEND_TO_ALL: Allow the access of Messages to All
+            MESSAGES_SCHEDULE: Allow the scheduling of Messages
+            MESSAGES_DELETE: Allow the deletion of Messages
+            GROUPS_CREATE: Allow the creating of Groups
+            GROUPS_UPDATE: Allow the updating of Groups
+            NOTES: Allow the usage of Notes
+            NOTIFICATION_READ: Allow the reading of Notifications
+            NOTIFICATION_CREATE: Allow the creation of Notifications
+            NOTIFICATION_UPDATE: Allow the updating of Notifications
+            NOTIFICATION_DELETE: Allow the deletion of Notifications
+            INTEGRATIONS_UPDATE: Update private integrations for notifications API
+            ADMIN_PANEL_ACCESS: Access admin level functionality
+            PAYMENTS_READ: Read payments
+            PAYMENTS_UPDATE: Update/make new payments
+            WA_LIVE_EVENTS: Can this person receive live events of this account
+            CHATDADDY_HOOK: Read/Update API Web hooks

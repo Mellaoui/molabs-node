@@ -1,0 +1,74 @@
+otp:
+  title: OTP
+  content: |
+    Thanks for your interest in ChatDaddy! 🎉
+    Your One-Time PIN is {{otp}}. For your protection, please do not share this code with others.
+    If you need any personalised help, feel free to book a free coaching session with us! 😃 https://chatdaddy.tech/en/coaching/
+contactAssigned:
+  title: Contacts Assigned!
+  content: |
+    Hey {{fullName}}
+    
+    You have been assigned new contacts in {{teamName}}!
+    Visit https://app.chatdaddy.tech/inbox to check up on them.
+
+    Regards,
+    ChatDaddy Team
+signUp:
+  title: Welcome to ChatDaddy!
+  content: |
+    Hi {{fullName}},
+
+    We're glad to hav you on board! Scan the QR Code in our system with WhatsApp App after you login from https://app.chatdaddy.tech/inbox. You can enjoy ChatDaddy in 10 seconds! 
+
+    🔥The 6️⃣ most important tutorials for beginners🔥 
+    1. Start using ChatDaddy ︱(3mins) https://bit.ly/3dbY5FC 
+    2. Inbox page introduction-invite team members, let the team use together (1mins) https://bit.ly/3saUTy0 
+    3. How to use Inbox︱ template message, label classification (2mins) https://bit.ly/2QcfYLf 
+    4. Keyword Automation saves time through keyword reply (2mins) https://bit.ly/3sbYk7M 
+    5. Broadcast increases business volume through group messaging (3mins) https://bit.ly/328gqgk 
+    6. Audience︱WhatsApp CRM to manage your contacts (2mins) https://bit.ly/3daQbfB ⁉️
+    
+    What to do if you encounter a problem🔥⁉️ 
+    Help & Support ︱Help Center 
+    https://bit.ly/3nNI7ow
+
+    歡迎使用ChatDaddy！
+    登入後用WhatsApp App掃描QR Code，完成同步後便可以正式使用！
+
+    🔥新手上路最重要的6️⃣個基礎教程🔥 
+    1. 開始使用ChatDaddy ︱(3mins) 
+    https://bit.ly/3dbY5FC 
+    2. Inbox 頁面介紹 - 邀請隊員，讓團隊共同使用 （1mins) 
+    https://bit.ly/3saUTy0 
+    3. 如何活用Inbox︱模板訊息,標籤分類 (2mins) 
+    https://bit.ly/2QcfYLf 
+    4. Keyword Automation 透過關鍵詞回復節省時間 (2mins) 
+    https://bit.ly/3sbYk7M 
+    5. Broadcast 透過群發信息提升生意額(3mins) 
+    https://bit.ly/328gqgk 
+    6. Audience︱WhatsApp CRM管理你的聯絡人(2mins)
+    https://bit.ly/3daQbfB ⁉️
+
+    遇到問題是怎麼辦🔥⁉️ 
+    幫助 & 支持 ︱Help Center 
+    https://bit.ly/3a4EULX
+newConnection:
+  title: Welcome to ChatDaddy!
+  content: |
+    Hey {{fullName}}
+    
+    This is to inform that you have signed into ChatDaddy Live Chat with the phone number: {{phoneNumber}}!
+
+    Regards,
+    ChatDaddy Team
+disconnected:
+  title: WhatsApp Account Disconnected from ChatDaddy 🥺
+  content: |
+    Hi {{fullName}}
+
+    We just noticed your WhatsApp got disconnected from ChatDaddy. We tried our best to automatically reconnect but were unable to.
+    Please log in again from https://app.chatdaddy.tech. Apologies for the inconvenience!
+
+    Regards,
+    ChatDaddy Team

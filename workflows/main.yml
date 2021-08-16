@@ -1,0 +1,55 @@
+name: Serverless Deploy
+
+on:
+  push:
+    branches:
+    - sls
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+    services:
+      # create a MySQL DB to test against
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5 -e MYSQL_ROOT_PASSWORD=password -e MYSQL_USER=tester -e MYSQL_PASSWORD=password -e MYSQL_DATABASE=main --entrypoint sh mysql:8 -c "exec docker-entrypoint.sh mysqld --default-authentication-plugin=mysql_native_password"
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        branch: sls
+    
+    - name: Node ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install packages
+      run: npm install
+    
+    - name: Run tests
+      run: |
+        NODE_ENV=test yarn migrate
+        npm run test
+    
+    - name: Copy env # copy in your env file
+      run: 'echo -e "${{secrets.ENV}}" > .env'
+    
+    - name: Run Migrations
+      run: npm run migrate
+
+    - name: Serverless AWS authentication
+      run: yarn sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY }} --secret ${{ secrets.AWS_SECRET_KEY }}
+    
+    - name: Deploy Lambda functions
+      run: yarn sls deploy
