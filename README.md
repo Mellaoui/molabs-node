@@ -1,4 +1,4 @@
-# ChatDaddy Authentication Service
+# Authentication Service
 
 ## Stack
 - Typescript (language)
